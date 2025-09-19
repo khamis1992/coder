@@ -1,122 +1,184 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Moon, Sun, Rocket, User, LogOut, Settings } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { authService } from '../lib/supabase'
 
-const Navbar = ({ user, setUser, darkMode, toggleTheme }) => {
+const Navbar = ({ user, setUser }) => {
+  const location = useLocation()
   const navigate = useNavigate()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
-    navigate('/')
+  const handleSignOut = async () => {
+    try {
+      await authService.signOut()
+      setUser(null)
+      localStorage.removeItem('user')
+      navigate('/')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  const isActive = (path) => location.pathname === path
+
+  const navItems = [
+    { path: '/projects', label: 'Projects', requiresAuth: true },
+    { path: '/templates', label: 'Templates', requiresAuth: false },
+    { path: '/studio', label: 'Studio', requiresAuth: true },
+    { path: '/pricing', label: 'Pricing', requiresAuth: false },
+  ]
+
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg gradient-bg">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold gradient-text">Code Launch</span>
-          </Link>
+    <header className="border-b border-subtle">
+      <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        {/* Logo */}
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 font-extrabold tracking-tight text-mint text-lg sm:text-xl"
+        >
+          <span className="h-2.5 w-2.5 rounded-full bg-mint"></span>
+          <span>Code Launch</span>
+        </Link>
 
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Home
-            </Link>
-            <Link 
-              to="/projects" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Projects
-            </Link>
-            <Link 
-              to="/pricing" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </Link>
-          </div>
+        {/* Desktop Navigation */}
+        <ul className="hidden md:flex items-center gap-8 text-sm text-muted">
+          {navItems.map((item) => {
+            // Show item if it doesn't require auth, or if user is logged in
+            if (item.requiresAuth && !user) return null
+            
+            return (
+              <li key={item.path}>
+                <Link 
+                  to={item.path}
+                  className={`transition-colors ${
+                    isActive(item.path) ? 'text-white' : 'hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              className="w-9 h-9 p-0"
-            >
-              {darkMode ? (
-                <Sun className="h-4 w-4" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
-            </Button>
+        {/* Right side actions */}
+        <div className="flex items-center gap-3">
+          {user ? (
+            <>
+              {/* User info */}
+              <span className="hidden sm:inline text-sm text-muted">
+                Welcome, <strong className="text-white">{user.user_metadata?.full_name || user.email}</strong>
+              </span>
+              
+              {/* Settings button */}
+              <Link
+                to="/dashboard"
+                className="hidden sm:inline-flex btn btn-secondary rounded-full px-4 py-2 text-sm font-semibold"
+              >
+                Dashboard
+              </Link>
 
-            {/* User Menu or Auth Buttons */}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <User className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.name || user.email}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  {user.role === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button asChild className="gradient-bg">
-                  <Link to="/register">Get Started</Link>
-                </Button>
+              {/* New Project button */}
+              <Link
+                to="/studio"
+                className="btn btn-mint rounded-full px-4 py-2 text-sm font-semibold"
+              >
+                New Project
+              </Link>
+
+              {/* Sign out button */}
+              <button
+                onClick={handleSignOut}
+                className="btn btn-secondary rounded-full px-4 py-2 text-sm font-semibold"
+              >
+                Sign out
+              </button>
+
+              {/* User avatar */}
+              <div className="h-8 w-8 rounded-full bg-mint text-marine font-bold flex items-center justify-center text-sm">
+                {getInitials(user.user_metadata?.full_name || user.email)}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Sign in button */}
+              <Link
+                to="/login"
+                className="btn btn-secondary rounded-full px-4 py-2 text-sm font-semibold"
+              >
+                Sign in
+              </Link>
+
+              {/* Get started button */}
+              <Link
+                to="/register"
+                className="btn btn-mint rounded-full px-4 py-2 text-sm font-semibold"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden btn btn-secondary rounded-lg p-2"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="md:hidden border-t border-subtle bg-ink">
+          <div className="max-w-7xl mx-auto px-6 py-4 space-y-3">
+            {navItems.map((item) => {
+              // Show item if it doesn't require auth, or if user is logged in
+              if (item.requiresAuth && !user) return null
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`block py-2 text-sm transition-colors ${
+                    isActive(item.path) ? 'text-mint' : 'text-muted hover:text-white'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+            
+            {!user && (
+              <div className="pt-3 border-t border-subtle space-y-2">
+                <Link
+                  to="/login"
+                  className="block py-2 text-sm text-muted hover:text-white"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="block py-2 text-sm text-mint font-semibold"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </nav>
+      )}
+    </header>
   )
 }
 

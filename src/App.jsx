@@ -6,6 +6,8 @@ import './App.css'
 import Navbar from './components/Navbar'
 import Home from './components/Home'
 import Projects from './components/Projects'
+import Templates from './components/Templates'
+import Studio from './components/Studio'
 import Pricing from './components/Pricing'
 import Login from './components/Login'
 import Register from './components/Register'
@@ -14,32 +16,30 @@ import AdminDashboard from './components/AdminDashboard'
 
 function App() {
   const [user, setUser] = useState(null)
-  const [darkMode, setDarkMode] = useState(false)
 
   useEffect(() => {
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme')
-    if (savedTheme) {
-      setDarkMode(savedTheme === 'dark')
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+    // Check for saved user in localStorage
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (error) {
+        console.error('Error parsing saved user:', error)
+        localStorage.removeItem('user')
+      }
     }
   }, [])
 
-  const toggleTheme = () => {
-    const newTheme = !darkMode
-    setDarkMode(newTheme)
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light')
-    document.documentElement.classList.toggle('dark', newTheme)
-  }
-
   return (
     <Router>
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar user={user} setUser={setUser} darkMode={darkMode} toggleTheme={toggleTheme} />
+      <div className="min-h-screen bg-ink text-white">
+        <Navbar user={user} setUser={setUser} />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home user={user} />} />
           <Route path="/projects" element={<Projects user={user} />} />
-          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/templates" element={<Templates />} />
+          <Route path="/studio" element={<Studio user={user} />} />
+          <Route path="/pricing" element={<Pricing user={user} />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
           <Route path="/dashboard" element={<Dashboard user={user} />} />

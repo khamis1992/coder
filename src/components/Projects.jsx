@@ -1,533 +1,243 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Plus, 
-  Search, 
-  Filter,
-  Rocket,
-  Code,
-  Globe,
-  Settings,
-  Play,
-  Pause,
-  Trash2,
-  Edit,
-  Eye,
-  Download,
-  Share,
-  Zap,
-  Sparkles,
-  Bot,
-  Terminal,
-  FileCode,
-  Layers,
-  Database,
-  Cloud
-} from 'lucide-react'
-import { dbService } from '../lib/supabase'
+import { useState } from 'react'
+import { Navigate, Link } from 'react-router-dom'
 
 const Projects = ({ user }) => {
-  const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterType, setFilterType] = useState('all')
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [newProject, setNewProject] = useState({
-    name: '',
-    description: '',
-    type: 'web-app',
-    template: 'blank'
-  })
-  const navigate = useNavigate()
-
-  const projectTemplates = [
-    {
-      id: 'blank',
-      name: 'Blank Project',
-      description: 'Start from scratch with a clean slate',
-      icon: <FileCode className="h-6 w-6" />,
-      type: 'web-app'
-    },
-    {
-      id: 'react-app',
-      name: 'React Application',
-      description: 'Modern React app with TypeScript and Tailwind CSS',
-      icon: <Code className="h-6 w-6" />,
-      type: 'web-app'
-    },
-    {
-      id: 'nextjs-app',
-      name: 'Next.js Application',
-      description: 'Full-stack React framework with SSR and API routes',
-      icon: <Layers className="h-6 w-6" />,
-      type: 'web-app'
-    },
-    {
-      id: 'vue-app',
-      name: 'Vue.js Application',
-      description: 'Progressive Vue.js app with Vite and TypeScript',
-      icon: <Sparkles className="h-6 w-6" />,
-      type: 'web-app'
-    },
-    {
-      id: 'node-api',
-      name: 'Node.js API',
-      description: 'RESTful API with Express.js and MongoDB',
-      icon: <Database className="h-6 w-6" />,
-      type: 'backend'
-    },
-    {
-      id: 'python-api',
-      name: 'Python API',
-      description: 'FastAPI backend with PostgreSQL database',
-      icon: <Terminal className="h-6 w-6" />,
-      type: 'backend'
-    },
-    {
-      id: 'static-site',
-      name: 'Static Website',
-      description: 'HTML, CSS, and JavaScript static website',
-      icon: <Globe className="h-6 w-6" />,
-      type: 'static'
-    },
-    {
-      id: 'portfolio',
-      name: 'Portfolio Template',
-      description: 'Professional portfolio website template',
-      icon: <Eye className="h-6 w-6" />,
-      type: 'static'
-    }
-  ]
-
-  const mockProjects = [
+  const [projects, setProjects] = useState([
     {
       id: 1,
-      name: 'E-commerce Platform',
-      description: 'Full-stack e-commerce application with React and Node.js',
-      type: 'web-app',
-      status: 'active',
-      template: 'react-app',
-      created_at: '2024-01-15T10:00:00Z',
-      updated_at: '2024-01-20T15:30:00Z',
-      deployments: 5,
-      url: 'https://ecommerce-demo.codelaunch.app'
+      name: 'E-commerce Dashboard',
+      description: 'Admin dashboard for managing products and orders',
+      status: 'deployed',
+      lastModified: '2 hours ago',
+      framework: 'React',
+      url: 'https://ecommerce-dash.codelaunch.app'
     },
     {
       id: 2,
-      name: 'Portfolio Website',
-      description: 'Personal portfolio showcasing my projects and skills',
-      type: 'static',
-      status: 'deployed',
-      template: 'portfolio',
-      created_at: '2024-01-10T09:00:00Z',
-      updated_at: '2024-01-18T12:00:00Z',
-      deployments: 3,
-      url: 'https://portfolio.codelaunch.app'
+      name: 'AI Chat Bot',
+      description: 'Customer support chatbot with AI integration',
+      status: 'building',
+      lastModified: '1 day ago',
+      framework: 'Vue.js',
+      url: null
     },
     {
       id: 3,
-      name: 'Task Management API',
-      description: 'RESTful API for task management application',
-      type: 'backend',
-      status: 'development',
-      template: 'node-api',
-      created_at: '2024-01-22T14:00:00Z',
-      updated_at: '2024-01-25T16:45:00Z',
-      deployments: 1,
+      name: 'Portfolio Website',
+      description: 'Personal portfolio with blog functionality',
+      status: 'draft',
+      lastModified: '3 days ago',
+      framework: 'Next.js',
       url: null
     }
-  ]
+  ])
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    
-    loadProjects()
-  }, [user, navigate])
+  const [filter, setFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const loadProjects = async () => {
-    try {
-      setLoading(true)
-      
-      // In a real app, this would load from Supabase
-      // const { data } = await dbService.getUserProjects(user.id)
-      
-      // Using mock data for demonstration
-      setProjects(mockProjects)
-      
-    } catch (error) {
-      console.error('Error loading projects:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCreateProject = async () => {
-    try {
-      const projectData = {
-        ...newProject,
-        user_id: user.id,
-        status: 'development',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        deployments: 0
-      }
-
-      // In a real app, this would save to Supabase
-      // await dbService.createProject(projectData)
-      
-      // For demo, add to local state
-      setProjects(prev => [{ ...projectData, id: Date.now() }, ...prev])
-      setShowCreateDialog(false)
-      setNewProject({ name: '', description: '', type: 'web-app', template: 'blank' })
-      
-    } catch (error) {
-      console.error('Error creating project:', error)
-    }
-  }
-
-  const handleProjectAction = (action, projectId) => {
-    console.log(`${action} project:`, projectId)
-    // Implement project actions (deploy, edit, delete, etc.)
+  // Redirect to login if not authenticated
+  if (!user) {
+    return <Navigate to="/login" replace />
   }
 
   const filteredProjects = projects.filter(project => {
+    const matchesFilter = filter === 'all' || project.status === filter
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || project.status === filterStatus
-    const matchesType = filterType === 'all' || project.type === filterType
-    return matchesSearch && matchesStatus && matchesType
+    return matchesFilter && matchesSearch
   })
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      development: 'secondary',
-      active: 'default',
-      deployed: 'outline',
-      paused: 'destructive'
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'deployed': return 'text-mint'
+      case 'building': return 'text-yellow-400'
+      case 'draft': return 'text-muted'
+      default: return 'text-muted'
     }
-    return <Badge variant={variants[status] || 'secondary'}>{status}</Badge>
   }
 
-  const getTypeIcon = (type) => {
-    const icons = {
-      'web-app': <Code className="h-4 w-4" />,
-      'backend': <Database className="h-4 w-4" />,
-      'static': <Globe className="h-4 w-4" />
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'deployed': return '🟢'
+      case 'building': return '🟡'
+      case 'draft': return '⚪'
+      default: return '⚪'
     }
-    return icons[type] || <FileCode className="h-4 w-4" />
   }
 
-  if (!user) {
-    return null
+  const handleCreateProject = () => {
+    // Navigate to studio or show create project modal
+    window.location.href = '/studio'
   }
+
+  const handleDeleteProject = (projectId) => {
+    if (confirm('Are you sure you want to delete this project?')) {
+      setProjects(projects.filter(p => p.id !== projectId))
+    }
+  }
+
+  const filters = [
+    { id: 'all', label: 'All Projects', count: projects.length },
+    { id: 'deployed', label: 'Deployed', count: projects.filter(p => p.status === 'deployed').length },
+    { id: 'building', label: 'Building', count: projects.filter(p => p.status === 'building').length },
+    { id: 'draft', label: 'Drafts', count: projects.filter(p => p.status === 'draft').length }
+  ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="flex justify-between items-start mb-4">
+    <div className="min-h-screen bg-ink text-white">
+      {/* Page header */}
+      <section className="max-w-7xl mx-auto px-6 pt-10 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Your Projects</h1>
-            <p className="text-muted-foreground">
-              Build, deploy, and manage your applications with AI-powered development tools.
-            </p>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Projects</h1>
+            <p className="mt-2 text-muted">Manage and deploy your applications</p>
           </div>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button className="gradient-bg">
-                <Plus className="mr-2 h-4 w-4" />
-                New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Create New Project</DialogTitle>
-                <DialogDescription>
-                  Choose a template and configure your new project. Our AI assistant will help you get started quickly.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="project-name">Project Name</Label>
-                    <Input
-                      id="project-name"
-                      placeholder="My Awesome Project"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="project-type">Project Type</Label>
-                    <Select value={newProject.type} onValueChange={(value) => setNewProject(prev => ({ ...prev, type: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="web-app">Web Application</SelectItem>
-                        <SelectItem value="backend">Backend API</SelectItem>
-                        <SelectItem value="static">Static Website</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="project-description">Description</Label>
-                  <Textarea
-                    id="project-description"
-                    placeholder="Describe your project..."
-                    value={newProject.description}
-                    onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label>Choose Template</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {projectTemplates
-                      .filter(template => template.type === newProject.type || template.id === 'blank')
-                      .map((template) => (
-                      <Card 
-                        key={template.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          newProject.template === template.id ? 'ring-2 ring-primary' : ''
-                        }`}
-                        onClick={() => setNewProject(prev => ({ ...prev, template: template.id }))}
-                      >
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white">
-                              {template.icon}
-                            </div>
-                            <div>
-                              <CardTitle className="text-sm">{template.name}</CardTitle>
-                              <CardDescription className="text-xs">
-                                {template.description}
-                              </CardDescription>
-                            </div>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    className="gradient-bg" 
-                    onClick={handleCreateProject}
-                    disabled={!newProject.name.trim()}
-                  >
-                    <Rocket className="mr-2 h-4 w-4" />
-                    Create Project
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <button 
+            onClick={handleCreateProject}
+            className="btn btn-mint rounded-xl px-6 py-2.5 font-semibold"
+          >
+            + New Project
+          </button>
         </div>
+      </section>
 
-        {/* AI Assistant Banner */}
-        <Alert className="mb-6 border-primary/20 bg-primary/5">
-          <Bot className="h-4 w-4" />
-          <AlertDescription>
-            <strong>AI Assistant Ready:</strong> Get intelligent code suggestions, automated testing, 
-            and deployment optimization for all your projects.
-          </AlertDescription>
-        </Alert>
-      </div>
+      {/* Search and Filters */}
+      <section className="max-w-7xl mx-auto px-6 pb-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="panel rounded-xl px-4 py-3 flex items-center gap-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" className="text-subtle">
+                <path fill="currentColor" d="M10 18a8 8 0 1 1 8-8h-2a6 6 0 1 0-6 6zm11 3l-6-6l1.5-1.5l6 6z"/>
+              </svg>
+              <input 
+                className="w-full bg-transparent outline-none placeholder:text-white/40 text-sm"
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+          {/* Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto">
+            {filters.map(filterOption => (
+              <button
+                key={filterOption.id}
+                onClick={() => setFilter(filterOption.id)}
+                className={`tab px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${
+                  filter === filterOption.id ? 'active' : 'inactive'
+                }`}
+              >
+                {filterOption.label} ({filterOption.count})
+              </button>
+            ))}
+          </div>
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="development">Development</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="deployed">Deployed</SelectItem>
-            <SelectItem value="paused">Paused</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="web-app">Web App</SelectItem>
-            <SelectItem value="backend">Backend</SelectItem>
-            <SelectItem value="static">Static Site</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      </section>
 
       {/* Projects Grid */}
-      {filteredProjects.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <div className="space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full gradient-bg flex items-center justify-center">
-                <Rocket className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold">No projects found</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                {searchTerm || filterStatus !== 'all' || filterType !== 'all' 
-                  ? 'Try adjusting your search or filters to find projects.'
-                  : 'Create your first project to get started with Code Launch.'
-                }
-              </p>
-              {!searchTerm && filterStatus === 'all' && filterType === 'all' && (
-                <Button 
-                  className="gradient-bg" 
-                  onClick={() => setShowCreateDialog(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Your First Project
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <Card key={project.id} className="hover-lift group">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white">
-                      {getTypeIcon(project.type)}
+      <main className="max-w-7xl mx-auto px-6 pb-20">
+        {filteredProjects.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-4xl mb-4">📁</div>
+            <h3 className="text-xl font-semibold mb-2">
+              {searchTerm ? 'No projects found' : 'No projects yet'}
+            </h3>
+            <p className="text-muted mb-6">
+              {searchTerm 
+                ? 'Try adjusting your search criteria.' 
+                : 'Create your first project to get started with Code Launch.'
+              }
+            </p>
+            {!searchTerm && (
+              <button 
+                onClick={handleCreateProject}
+                className="btn btn-mint rounded-xl px-6 py-2.5 font-semibold"
+              >
+                Create Your First Project
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project) => (
+              <article key={project.id} className="project-card">
+                {/* Header */}
+                <div className="px-5 pt-5 flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{getStatusIcon(project.status)}</span>
+                      <span className={`text-xs font-medium ${getStatusColor(project.status)}`}>
+                        {project.status.toUpperCase()}
+                      </span>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                        {project.name}
-                      </CardTitle>
-                      <div className="flex items-center space-x-2 mt-1">
-                        {getStatusBadge(project.status)}
-                        <Badge variant="outline" className="text-xs">
-                          {project.type}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <CardDescription className="text-sm">
-                  {project.description}
-                </CardDescription>
-
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>
-                    {project.deployments} deployment{project.deployments !== 1 ? 's' : ''}
-                  </span>
-                  <span>
-                    Updated {new Date(project.updated_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                {project.url && (
-                  <div className="flex items-center space-x-2 p-2 bg-muted/50 rounded-lg">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={project.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline truncate"
-                    >
-                      {project.url}
-                    </a>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleProjectAction('edit', project.id)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleProjectAction('settings', project.id)}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleProjectAction('delete', project.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <h3 className="font-semibold text-lg">{project.name}</h3>
+                    <p className="text-sm text-muted mt-1">{project.description}</p>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    {project.status === 'active' ? (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleProjectAction('pause', project.id)}
-                      >
-                        <Pause className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleProjectAction('deploy', project.id)}
-                      >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button 
-                      size="sm" 
-                      className="gradient-bg"
-                      onClick={() => handleProjectAction('open', project.id)}
-                    >
-                      <Zap className="mr-1 h-4 w-4" />
-                      Open
-                    </Button>
+                  {/* Actions Menu */}
+                  <div className="relative">
+                    <button className="text-muted hover:text-white p-1">
+                      <svg width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                {/* Meta */}
+                <div className="px-5 mt-4 flex items-center gap-4 text-xs text-subtle">
+                  <span className="chip rounded-full px-2 py-1">
+                    {project.framework}
+                  </span>
+                  <span>Updated {project.lastModified}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="mt-5 border-t border-white/10 p-5 flex gap-2">
+                  {project.status === 'deployed' && project.url ? (
+                    <a 
+                      href={project.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-mint flex-1 py-2 text-sm font-semibold"
+                    >
+                      View Live
+                    </a>
+                  ) : (
+                    <Link 
+                      to={`/studio?project=${project.id}`}
+                      className="btn btn-mint flex-1 py-2 text-sm font-semibold text-center"
+                    >
+                      {project.status === 'draft' ? 'Continue Building' : 'Open Editor'}
+                    </Link>
+                  )}
+                  
+                  <button 
+                    onClick={() => handleDeleteProject(project.id)}
+                    className="btn btn-secondary px-3 py-2 text-sm"
+                    title="Delete project"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-subtle">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between text-xs text-faint">
+          <p>© {new Date().getFullYear()} Code Launch</p>
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+          </div>
         </div>
-      )}
+      </footer>
     </div>
   )
 }

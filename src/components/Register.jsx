@@ -1,26 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Loader2, Eye, EyeOff, Rocket, CheckCircle } from 'lucide-react'
-import { authService, dbService } from '../lib/supabase'
+import { authService } from '../lib/supabase'
 
 const Register = ({ setUser }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const navigate = useNavigate()
 
@@ -32,270 +22,211 @@ const Register = ({ setUser }) => {
     setError('')
   }
 
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      setError('Name is required')
-      return false
-    }
-    if (!formData.email.trim()) {
-      setError('Email is required')
-      return false
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      return false
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
-    }
-    if (!acceptTerms) {
-      setError('You must accept the terms and conditions')
-      return false
-    }
-    return true
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    if (!validateForm()) return
-
     setLoading(true)
     setError('')
 
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      setLoading(false)
+      return
+    }
+
+    if (!acceptTerms) {
+      setError('Please accept the Terms of Service and Privacy Policy')
+      setLoading(false)
+      return
+    }
+
     try {
-      const { user, error } = await authService.signUp(
-        formData.email, 
-        formData.password,
-        {
-          name: formData.name
-        }
-      )
+      const { user } = await authService.signUp(formData.email, formData.password, {
+        full_name: formData.fullName
+      })
       
-      if (error) {
-        setError(error)
-        return
-      }
-
       if (user) {
-        // Create user profile
-        await dbService.createUserProfile(user.id, {
-          name: formData.name,
-          email: formData.email,
-          role: 'user',
-          subscription: 'free'
-        })
-
-        setSuccess(true)
-        
-        // Auto-login after successful registration
-        setTimeout(() => {
-          const userData = {
-            id: user.id,
-            email: user.email,
-            name: formData.name,
-            role: 'user',
-            subscription: 'free'
-          }
-          setUser(userData)
-          localStorage.setItem('user', JSON.stringify(userData))
-          navigate('/dashboard')
-        }, 2000)
+        setUser(user)
+        navigate('/dashboard')
       }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+    } catch (error) {
+      setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30 px-4">
-        <Card className="w-full max-w-md glass-effect border-0 shadow-xl">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full gradient-bg flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold">Welcome to Code Launch!</h2>
-              <p className="text-muted-foreground">
-                Your account has been created successfully. You'll be redirected to your dashboard shortly.
-              </p>
-              <div className="animate-spin w-6 h-6 mx-auto">
-                <Loader2 className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const handleSocialLogin = (provider) => {
+    alert(`${provider} registration will be implemented soon!`)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/30 px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg gradient-bg">
-              <Rocket className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold gradient-text">Code Launch</span>
-          </Link>
-          <h1 className="text-2xl font-bold">Create Your Account</h1>
-          <p className="text-muted-foreground">Join thousands of developers building the future</p>
-        </div>
+    <div className="min-h-screen bg-ink text-white flex flex-col">
+      {/* Ambient background effect */}
+      <div className="absolute inset-x-0 bottom-[-20vh] h-[60vh] -z-10 ambient"></div>
 
-        <Card className="glass-effect border-0 shadow-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Sign Up</CardTitle>
-            <CardDescription className="text-center">
-              Create your account to start building amazing projects
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+      {/* Main content */}
+      <main className="flex-1 grid place-items-center px-6 py-10">
+        <section className="w-full max-w-md panel rounded-2xl p-6 sm:p-8">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 grid place-items-center rounded-2xl bg-mint text-marine">
+              <span className="font-extrabold">CL</span>
+            </div>
+            <h1 className="mt-4 text-2xl font-extrabold">Create your account</h1>
+            <p className="mt-1 text-muted">Join Code Launch and start building apps</p>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            {/* Full Name */}
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-semibold">Full Name</label>
+              <input 
+                id="fullName" 
+                name="fullName"
+                type="text" 
+                required 
+                placeholder="John Doe"
+                className="mt-2 w-full rounded-xl px-3 py-2 input text-sm"
+                value={formData.fullName}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold">Email</label>
+              <input 
+                id="email" 
+                name="email"
+                type="email" 
+                required 
+                placeholder="you@company.com"
+                className="mt-2 w-full rounded-xl px-3 py-2 input text-sm"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold">Password</label>
+              <input 
+                id="password" 
+                name="password"
+                type="password" 
+                required 
+                placeholder="••••••••"
+                className="mt-2 w-full rounded-xl px-3 py-2 input text-sm"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold">Confirm Password</label>
+              <input 
+                id="confirmPassword" 
+                name="confirmPassword"
+                type="password" 
+                required 
+                placeholder="••••••••"
+                className="mt-2 w-full rounded-xl px-3 py-2 input text-sm"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Terms */}
+            <div className="flex items-center gap-2 text-sm">
+              <input 
+                type="checkbox" 
+                id="terms" 
+                required 
+                className="accent-mint"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+              />
+              <label htmlFor="terms">
+                I agree to the{' '}
+                <Link to="/terms" className="text-mint hover:underline">Terms</Link>
+                {' '}and{' '}
+                <Link to="/privacy" className="text-mint hover:underline">Privacy Policy</Link>
+              </label>
+            </div>
+
+            {/* Submit */}
+            <button 
+              type="submit"
+              disabled={loading}
+              className="btn btn-mint w-full rounded-xl px-4 py-2.5 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="spinner"></div>
+                  Creating Account...
+                </span>
+              ) : (
+                'Create Account'
               )}
+            </button>
 
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10"></div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={loading}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={acceptTerms}
-                  onCheckedChange={setAcceptTerms}
-                  disabled={loading}
-                />
-                <Label htmlFor="terms" className="text-sm">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full gradient-bg" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <div className="text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline font-medium">
-                  Sign in
-                </Link>
+              <div className="relative flex justify-center">
+                <span className="bg-transparent px-2 text-xs text-faint">or sign up with</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            {/* Social Login */}
+            <div className="grid grid-cols-3 gap-3">
+              <button 
+                type="button" 
+                onClick={() => handleSocialLogin('Google')}
+                className="btn btn-secondary rounded-xl py-2 text-sm"
+              >
+                Google
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleSocialLogin('GitHub')}
+                className="btn btn-secondary rounded-xl py-2 text-sm"
+              >
+                GitHub
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleSocialLogin('Apple')}
+                className="btn btn-secondary rounded-xl py-2 text-sm"
+              >
+                Apple
+              </button>
+            </div>
+          </form>
+
+          <p className="mt-6 text-center text-xs text-subtle">
+            Already have an account?{' '}
+            <Link to="/login" className="text-mint hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </section>
+      </main>
     </div>
   )
 }
